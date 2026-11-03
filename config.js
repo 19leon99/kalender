@@ -4,7 +4,7 @@ window.KALENDER_CONFIG = {
 
   // Namen, wie sie in der App erscheinen
   name1: 'Leon',
-  name2: 'Person 2',
+  name2: 'Laura',
 
   // Aus Supabase: Knopf "Connect" oben im Projekt › Projekt-URL und Publishable key (sb_publishable_…).
   // Niemals den Secret key eintragen.

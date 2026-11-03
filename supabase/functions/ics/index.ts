@@ -5,7 +5,7 @@
 
 const NAMES: Record<string, string> = {
   a: Deno.env.get("NAME1") ?? "Leon",
-  b: Deno.env.get("NAME2") ?? "Person 2",
+  b: Deno.env.get("NAME2") ?? "Laura",
   g: "Gemeinsam",
 };
 const DAYS = ["MO", "TU", "WE", "TH", "FR", "SA", "SU"];
