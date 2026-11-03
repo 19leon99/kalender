@@ -9,8 +9,8 @@ window.KALENDER_CONFIG = {
   // Aus Supabase: Knopf "Connect" oben im Projekt › Projekt-URL und Publishable key (sb_publishable_…).
   // Niemals den Secret key eintragen.
   // Leer lassen = App läuft nur im Browser (zum Ausprobieren).
-  supabaseUrl: '',
-  supabaseAnonKey: '',
+  supabaseUrl: 'https://xhuujdtibfxdcegncrbn.supabase.co',
+  supabaseAnonKey: 'sb_publishable_5uguXhpUMuqIz6_cYWJ_cg_ZbXs4ONA',
 
   // Optional: Adresse der Abo-Funktion (siehe README, Schritt 5), z. B.
   // 'https://abcd1234.supabase.co/functions/v1/ics'
