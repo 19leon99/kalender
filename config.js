@@ -1,0 +1,17 @@
+// Einstellungen für euren Kalender. Nach dem Ändern speichern und auf GitHub hochladen.
+window.KALENDER_CONFIG = {
+  appName: 'Unser Kalender',
+
+  // Namen, wie sie in der App erscheinen
+  name1: 'Leon',
+  name2: 'Person 2',
+
+  // Aus Supabase: Project Settings › API › Project URL und den "anon public" Schlüssel.
+  // Leer lassen = App läuft nur im Browser (zum Ausprobieren).
+  supabaseUrl: '',
+  supabaseAnonKey: '',
+
+  // Optional: Adresse der Abo-Funktion (siehe README, Schritt 5), z. B.
+  // 'https://abcd1234.supabase.co/functions/v1/ics'
+  icsFeedUrl: ''
+};
