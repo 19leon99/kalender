@@ -18,10 +18,11 @@ Deno.serve(async (req) => {
   const k = new URL(req.url).searchParams.get("k") ?? "";
   if (!/^[A-Za-z0-9_-]{24,64}$/.test(k)) return new Response("Ungültiger Link", { status: 400 });
   const url = Deno.env.get("SUPABASE_URL")!;
-  const key = Deno.env.get("SUPABASE_ANON_KEY")!;
+  // Neuer Schlüssel (Secret "PUBLISHABLE_KEY" selbst anlegen) oder der alte anon-Schlüssel, den Supabase noch mitliefert
+  const key = Deno.env.get("PUBLISHABLE_KEY") ?? Deno.env.get("SUPABASE_ANON_KEY")!;
   const res = await fetch(url + "/rest/v1/rpc/list_events", {
     method: "POST",
-    headers: { "Content-Type": "application/json", apikey: key, Authorization: "Bearer " + key },
+    headers: Object.assign({ "Content-Type": "application/json", apikey: key }, key.startsWith("eyJ") ? { Authorization: "Bearer " + key } : {}),
     body: JSON.stringify({ p_space: k }),
   });
   if (!res.ok) return new Response("Fehler beim Laden", { status: 502 });

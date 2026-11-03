@@ -19,13 +19,13 @@ Die Daten liegen in einer kostenlosen Supabase-Datenbank. Die App selbst liegt k
 
 1. Auf [supabase.com](https://supabase.com) mit GitHub anmelden und ein neues Projekt anlegen. Region: Frankfurt (eu-central-1).
 2. Im Projekt links **SQL Editor** öffnen, **New query**, den Inhalt von `supabase/schema.sql` einfügen und **Run** drücken.
-3. Unter **Project Settings › API** zwei Werte kopieren: die **Project URL** und den Schlüssel **anon public**.
+3. Zwei Werte kopieren. Am einfachsten über den Knopf **Connect** oben im Projekt: Dort stehen die Projekt-URL (`https://xxxx.supabase.co`) und der **Publishable key** (beginnt mit `sb_publishable_`). Alternativ: **Project Settings › API Keys** für den Schlüssel. Der ältere **anon**-Schlüssel (beginnt mit `eyJ`) funktioniert genauso. Den **Secret key** nie verwenden.
 
-Der anon-Schlüssel darf öffentlich im Code stehen. Er erlaubt nur die drei Funktionen aus `schema.sql`, und die geben Termine nur heraus, wenn man den geheimen Kalender-Schlüssel aus dem Einladungslink kennt.
+Der öffentliche Schlüssel darf öffentlich im Code stehen. Er erlaubt nur die drei Funktionen aus `schema.sql`, und die geben Termine nur heraus, wenn man den geheimen Kalender-Schlüssel aus dem Einladungslink kennt.
 
 ### 2. Einstellungen eintragen
 
-In `config.js` die Namen sowie `supabaseUrl` und `supabaseAnonKey` eintragen.
+In `config.js` die Namen sowie `supabaseUrl` (Projekt-URL) und `supabaseAnonKey` (Publishable key oder anon-Schlüssel) eintragen.
 
 ### 3. Auf GitHub hochladen und veröffentlichen
 

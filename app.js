@@ -140,7 +140,8 @@
   async function rpc(fn, body) {
     const res = await fetch(CFG.supabaseUrl.replace(/\/$/, '') + '/rest/v1/rpc/' + fn, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', apikey: CFG.supabaseAnonKey, Authorization: 'Bearer ' + CFG.supabaseAnonKey },
+      headers: Object.assign({ 'Content-Type': 'application/json', apikey: CFG.supabaseAnonKey },
+        /^eyJ/.test(CFG.supabaseAnonKey) ? { Authorization: 'Bearer ' + CFG.supabaseAnonKey } : {}),
       body: JSON.stringify(body)
     });
     if (!res.ok) throw new Error((await res.text()) || res.statusText);

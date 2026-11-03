@@ -6,7 +6,8 @@ window.KALENDER_CONFIG = {
   name1: 'Leon',
   name2: 'Person 2',
 
-  // Aus Supabase: Project Settings › API › Project URL und den "anon public" Schlüssel.
+  // Aus Supabase: Knopf "Connect" oben im Projekt › Projekt-URL und Publishable key (sb_publishable_…).
+  // Niemals den Secret key eintragen.
   // Leer lassen = App läuft nur im Browser (zum Ausprobieren).
   supabaseUrl: '',
   supabaseAnonKey: '',
