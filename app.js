@@ -4,7 +4,7 @@
 'use strict';
 (function () {
   const CFG = window.KALENDER_CONFIG || {};
-  const NAMES = { a: CFG.name1 || 'Leon', b: CFG.name2 || 'Person 2', g: 'Gemeinsam' };
+  const NAMES = { a: CFG.name1 || 'Leon', b: CFG.name2 || 'Laura', g: 'Gemeinsam' };
   const REMOTE = !!(CFG.supabaseUrl && CFG.supabaseAnonKey);
   const DEMO_ONLY = !!CFG.artifactDemo;
 

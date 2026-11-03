@@ -2,7 +2,7 @@
 
 Gemeinsamer Kalender für zwei Personen als Web-App. Läuft auf dem iPhone und auf Android, lässt sich auf den Home-Bildschirm legen und braucht für die zweite Person kein Konto.
 
-- Drei Eintragsarten: Person 1 (dunkelgrün), Person 2 (rosa), gemeinsam (hellblau)
+- Drei Eintragsarten: Person 1 (dunkelgrün), Laura (rosa), gemeinsam (hellblau)
 - Einmalige Termine und Serien (täglich, wöchentlich mit Wochentagen, monatlich, jährlich; Ende nie, am Datum oder nach Anzahl)
 - Serien ändern oder löschen für nur diesen, alle zukünftigen oder alle Termine
 - Monat, Woche und Liste mit Filter nach Person und Einmalig/Serie
@@ -36,11 +36,11 @@ In `config.js` die Namen sowie `supabaseUrl` (Projekt-URL) und `supabaseAnonKey`
 
 Das Repository kann öffentlich sein: Im Code stehen keine Termine und kein Geheimnis. Die Termine sind nur über den Einladungslink erreichbar.
 
-### 4. Kalender anlegen und Person 2 einladen
+### 4. Kalender anlegen und Laura einladen
 
 1. Die Adresse auf dem iPhone in Safari öffnen, „Ich bin Leon“ wählen.
 2. Unter **Zugang** auf **Neuen gemeinsamen Kalender anlegen** tippen.
-3. Den Einladungslink kopieren oder über das Teilen-Menü schicken. Wer den Link hat, kann alles sehen und ändern, also nur an Person 2 schicken.
+3. Den Einladungslink kopieren oder über das Teilen-Menü schicken. Wer den Link hat, kann alles sehen und ändern, also nur an Laura schicken.
 4. Auf den Home-Bildschirm legen: in Safari **Teilen › Zum Home-Bildschirm**. Auf Android in Chrome: Menü **⋮ › Zum Startbildschirm hinzufügen** bzw. **App installieren**.
 
 Wichtig fürs iPhone: Die App auf dem Home-Bildschirm hat einen eigenen Speicher, getrennt von Safari. Beim ersten Öffnen vom Home-Bildschirm unter **Zugang** den Einladungslink einfügen und **Verbinden** tippen. Das gilt für beide Personen, falls ihr iPhones nutzt. Auf Android teilen Chrome und die installierte App den Speicher.
@@ -68,9 +68,9 @@ pip install timetree-exporter
 timetree-exporter -o timetree.ics
 ```
 
-Das Tool fragt nach E-Mail und Passwort von TimeTree, deshalb sollte Person 2 es selbst ausführen. Es nutzt inoffizielle Schnittstellen und kann ohne Vorwarnung aufhören zu funktionieren.
+Das Tool fragt nach E-Mail und Passwort von TimeTree, deshalb sollte Laura es selbst ausführen. Es nutzt inoffizielle Schnittstellen und kann ohne Vorwarnung aufhören zu funktionieren.
 
-Beide Dateien in der App unter **Import** hochladen. Dateien mit „timetree“ im Namen werden automatisch Person 2 zugeordnet, die Zuordnung lässt sich pro Datei ändern. Termine mit gleichem Titel und gleicher Startzeit in beiden Dateien werden ein gemeinsamer Termin. Termine, die schon im Kalender stehen, werden übersprungen, ein zweiter Import legt also keine Doppelten an.
+Beide Dateien in der App unter **Import** hochladen. Dateien mit „timetree“ im Namen werden automatisch Laura zugeordnet, die Zuordnung lässt sich pro Datei ändern. Termine mit gleichem Titel und gleicher Startzeit in beiden Dateien werden ein gemeinsamer Termin. Termine, die schon im Kalender stehen, werden übersprungen, ein zweiter Import legt also keine Doppelten an.
 
 Grenzen beim Import: Serien wie „jeden zweiten Dienstag im Monat“ werden als monatlich am selben Datum übernommen, stündliche Serien als Einzeltermin. Zeitzonen werden als deutsche Ortszeit gelesen.
 
@@ -92,7 +92,7 @@ Lässt man `supabaseUrl` leer, läuft die App mit Beispielterminen nur im eigene
 
 ## Wenn etwas nicht klappt
 
-- **Änderungen von Person 2 erscheinen nicht:** Die App holt neue Termine alle 30 Sekunden und beim Öffnen. Kurz in eine andere App wechseln und zurück.
+- **Änderungen von Laura erscheinen nicht:** Die App holt neue Termine alle 30 Sekunden und beim Öffnen. Kurz in eine andere App wechseln und zurück.
 - **„Keine Verbindung“:** Supabase pausiert kostenlose Projekte nach einer Woche ohne Zugriff. Im Supabase-Dashboard auf **Restore project** klicken. Bei täglicher Nutzung passiert das nicht.
 - **Link verloren:** Auf einem verbundenen Gerät unter **Zugang** neu kopieren.
 - **Link ist in falsche Hände geraten:** Unter **Zugang** gibt es keinen „Link ändern“. Dann einen neuen Kalender anlegen, vorher alle Termine exportieren und danach importieren.
