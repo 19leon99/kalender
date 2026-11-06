@@ -283,9 +283,9 @@
     for (const o of occ) {
       // mehrtägige Termine an jedem Tag zeigen
       let d = dayStart(o.start);
-      const last = o.ev.allDay ? addDays(o.end, -1) : o.end;
+      // o.end ist exklusiv (bei ganztägigen Terminen 0 Uhr am Folgetag des letzten Tags)
       let guard = 0;
-      do { (byDay[ymd(d)] = byDay[ymd(d)] || []).push(o); d = addDays(d, 1); } while (d < last && guard++ < 60);
+      do { (byDay[ymd(d)] = byDay[ymd(d)] || []).push(o); d = addDays(d, 1); } while (d < o.end && guard++ < 60);
     }
     let cells = '';
     for (let w = 0; w < 6; w++) {

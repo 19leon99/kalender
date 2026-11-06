@@ -1,5 +1,5 @@
 // Hält die App-Dateien offline bereit. Termine kommen weiter live aus Supabase.
-const CACHE = 'kalender-v1';
+const CACHE = 'kalender-v2';
 const FILES = ['./', 'index.html', 'styles.css', 'app.js', 'config.js', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/apple-touch-icon.png'];
 
 self.addEventListener('install', e => {
