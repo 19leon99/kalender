@@ -369,9 +369,12 @@
   function viewList() {
     const from = today, to = addDays(today, 120);
     const occ = inRange(from, to).filter(o => (state.who === 'all' || o.ev.owner === state.who) && (state.kind === 'all' || (state.kind === 'series') === !!o.ev.rrule));
+    // nach Datum sortieren; innerhalb eines Tages ganztägige zuerst, dann nach Uhrzeit
+    const dayKey = o => ymd(o.start < from ? from : o.start);
+    occ.sort((a, b) => dayKey(a).localeCompare(dayKey(b)) || (b.ev.allDay - a.ev.allDay) || (a.start - b.start) || a.ev.title.localeCompare(b.ev.title));
     const groups = [];
     for (const o of occ) {
-      const k = ymd(o.start < from ? from : o.start);
+      const k = dayKey(o);
       let g = groups[groups.length - 1];
       if (!g || g.k !== k) { g = { k, items: [] }; groups.push(g); }
       g.items.push(o);
