@@ -1,0 +1,13 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ... bestehende Regeln der To-do-Liste bleiben hier unverändert ...
+
+    // Kalender: Zugriff nur, wer den geheimen Kalender-Schlüssel aus dem Einladungslink kennt.
+    // Die Liste aller Kalender lässt sich nicht abrufen, weil keine Regel auf /kalender/{space} passt.
+    match /kalender/{space}/{coll}/{id} {
+      allow read, write: if space.size() >= 24 && coll in ['events', 'meta'];
+    }
+  }
+}

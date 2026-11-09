@@ -8,24 +8,23 @@ Gemeinsamer Kalender für zwei Personen als Web-App. Läuft auf dem iPhone und a
 - Monat, Woche und Liste mit Filter nach Person und Einmalig/Serie
 - Import von .ics-Dateien aus Apple Kalender und TimeTree, doppelte Termine werden zu gemeinsamen
 - Export als .ics, einzelne Termine per Teilen-Menü verschicken
-- Optional: Abo-Link, damit der Kalender auch in Apple Kalender, Google Kalender oder TimeTree erscheint
 - Zahl der heutigen Termine am App-Symbol (iPhone ab iOS 16.4 nach dem Hinzufügen zum Home-Bildschirm, Android in Chrome)
 
-Die Daten liegen in einer kostenlosen Supabase-Datenbank. Die App selbst liegt kostenlos auf GitHub Pages.
+Die Daten liegen in Firebase Firestore, im selben Projekt wie die To-do-Liste. Die App selbst liegt kostenlos auf GitHub Pages.
 
 ## Einrichtung (ca. 20 Minuten, einmalig)
 
-### 1. Supabase-Projekt anlegen
+### 1. Firestore-Regeln ergänzen
 
-1. Auf [supabase.com](https://supabase.com) mit GitHub anmelden und ein neues Projekt anlegen. Region: Frankfurt (eu-central-1).
-2. Im Projekt links **SQL Editor** öffnen, **New query**, den Inhalt von `supabase/schema.sql` einfügen und **Run** drücken.
-3. Zwei Werte kopieren. Am einfachsten über den Knopf **Connect** oben im Projekt: Dort stehen die Projekt-URL (`https://xxxx.supabase.co`) und der **Publishable key** (beginnt mit `sb_publishable_`). Alternativ: **Project Settings › API Keys** für den Schlüssel. Der ältere **anon**-Schlüssel (beginnt mit `eyJ`) funktioniert genauso. Den **Secret key** nie verwenden.
+In der [Firebase-Konsole](https://console.firebase.google.com) das Projekt öffnen, links **Firestore Database › Regeln**. Den `match /kalender/...`-Block aus `firestore.rules` innerhalb von `match /databases/{database}/documents { … }` neben die bestehenden Regeln der To-do-Liste einfügen und **Veröffentlichen**. Die bestehenden Regeln bleiben, wie sie sind.
 
-Der öffentliche Schlüssel darf öffentlich im Code stehen. Er erlaubt nur die drei Funktionen aus `schema.sql`, und die geben Termine nur heraus, wenn man den geheimen Kalender-Schlüssel aus dem Einladungslink kennt.
+Der Kalender braucht keine Anmeldung. Wie bisher schützt der geheime Kalender-Schlüssel aus dem Einladungslink die Termine: Ohne ihn kommt man an keinen Termin, und die Liste aller Kalender lässt sich nicht abrufen.
 
 ### 2. Einstellungen eintragen
 
-In `config.js` die Namen sowie `supabaseUrl` (Projekt-URL) und `supabaseAnonKey` (Publishable key oder anon-Schlüssel) eintragen.
+In `config.js` die Namen und unter `firebase` die Werte aus **Projekteinstellungen › Allgemein › Meine Apps › Web-App** (`apiKey`, `authDomain`, `projectId`, `appId`) eintragen. Diese Werte dürfen öffentlich im Code stehen.
+
+Falls der API-Schlüssel in der Google Cloud Console auf bestimmte Websites beschränkt ist, muss `https://<dein-github-name>.github.io/*` erlaubt sein.
 
 ### 3. Auf GitHub hochladen und veröffentlichen
 
@@ -45,17 +44,9 @@ Das Repository kann öffentlich sein: Im Code stehen keine Termine und kein Gehe
 
 Wichtig fürs iPhone: Die App auf dem Home-Bildschirm hat einen eigenen Speicher, getrennt von Safari. Beim ersten Öffnen vom Home-Bildschirm unter **Zugang** den Einladungslink einfügen und **Verbinden** tippen. Das gilt für beide Personen, falls ihr iPhones nutzt. Auf Android teilen Chrome und die installierte App den Speicher.
 
-### 5. Optional: Abo-Link für andere Kalender-Apps
+### Umzug von Supabase
 
-Damit die gemeinsamen Termine auch in Apple Kalender, Google Kalender oder TimeTree erscheinen (nur lesen):
-
-1. In Supabase links **Edge Functions › Deploy a new function › Via Editor**, Name `ics`.
-2. Den Inhalt von `supabase/functions/ics/index.ts` einfügen und deployen.
-3. In den Einstellungen der Funktion **Verify JWT** (bzw. *Enforce JWT verification*) ausschalten, sonst lehnen Kalender-Apps den Link ab.
-4. Optional unter **Edge Functions › Secrets**: `NAME1`, `NAME2` und `CAL_NAME` setzen.
-5. In `config.js` `icsFeedUrl` auf `https://<projekt>.supabase.co/functions/v1/ics` setzen und neu hochladen.
-
-Danach steht unter **Zugang** der Abo-Link. Auf dem iPhone öffnet ein Tippen das Abo in Apple Kalender. Bei Google Kalender den Link am Rechner unter calendar.google.com › **Weitere Kalender › Per URL** einfügen. Google aktualisiert abonnierte Kalender nur alle paar Stunden.
+Beim ersten Öffnen nach dem Umzug kopiert jedes Gerät die Termine seines Kalenders einmalig aus Supabase nach Firestore (`config.js` › `legacySupabase`). Danach steht unter `kalender/<Schlüssel>/meta/umzug` ein Vermerk, und Supabase wird nicht mehr gelesen. Wenn beide Geräte den Kalender einmal geöffnet haben, kann `legacySupabase` aus `config.js` gelöscht und das Supabase-Projekt entfernt werden.
 
 ## Alte Termine übernehmen
 
@@ -81,18 +72,17 @@ Grenzen beim Import: Serien wie „jeden zweiten Dienstag im Monat“ werden als
 | `index.html` | Startseite der App |
 | `app.js` | Ansichten, Serienlogik, Import und Export |
 | `styles.css` | Farben und Layout, mit Dunkelmodus |
-| `config.js` | Namen und Supabase-Zugang |
+| `config.js` | Namen und Firebase-Zugang |
 | `manifest.webmanifest`, `sw.js`, `icons/` | App auf dem Home-Bildschirm, offline nutzbar |
-| `supabase/schema.sql` | Datenbank einrichten |
-| `supabase/functions/ics/` | Optionaler Abo-Link |
+| `firestore.rules` | Zugriffsregeln für Firestore |
 
-## Ohne Supabase ausprobieren
+## Ohne Firebase ausprobieren
 
-Lässt man `supabaseUrl` leer, läuft die App mit Beispielterminen nur im eigenen Browser. Zum lokalen Testen im Ordner `python3 -m http.server` starten und `http://localhost:8000` öffnen.
+Lässt man `firebase` weg, läuft die App mit Beispielterminen nur im eigenen Browser. Zum lokalen Testen im Ordner `python3 -m http.server` starten und `http://localhost:8000` öffnen.
 
 ## Wenn etwas nicht klappt
 
 - **Änderungen von Laura erscheinen nicht:** Die App holt neue Termine alle 30 Sekunden und beim Öffnen. Kurz in eine andere App wechseln und zurück.
-- **„Keine Verbindung“:** Supabase pausiert kostenlose Projekte nach einer Woche ohne Zugriff. Im Supabase-Dashboard auf **Restore project** klicken. Bei täglicher Nutzung passiert das nicht.
+- **„Keine Verbindung“:** Prüfen, ob die Firestore-Regeln veröffentlicht sind (Schritt 1). In der Browser-Konsole steht bei fehlenden Rechten „Missing or insufficient permissions“.
 - **Link verloren:** Auf einem verbundenen Gerät unter **Zugang** neu kopieren.
 - **Link ist in falsche Hände geraten:** Unter **Zugang** gibt es keinen „Link ändern“. Dann einen neuen Kalender anlegen, vorher alle Termine exportieren und danach importieren.

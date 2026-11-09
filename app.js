@@ -1,11 +1,15 @@
 /* Unser Kalender – gemeinsamer Kalender für zwei Personen.
-   Läuft ohne Build-Schritt. Daten liegen in Supabase (wenn in config.js eingetragen)
-   und zusätzlich im Browser als Zwischenspeicher. Ohne Supabase: Demo nur im Browser. */
+   Läuft ohne Build-Schritt. Daten liegen in Firebase Firestore (wenn in config.js eingetragen)
+   und zusätzlich im Browser als Zwischenspeicher. Ohne Firebase: Demo nur im Browser. */
 'use strict';
 (function () {
   const CFG = window.KALENDER_CONFIG || {};
   const NAMES = { a: CFG.name1 || 'Leon', b: CFG.name2 || 'Laura', g: 'Gemeinsam' };
-  const REMOTE = !!(CFG.supabaseUrl && CFG.supabaseAnonKey);
+  const FB_CFG = CFG.firebase || null;
+  const REMOTE = !!(FB_CFG && FB_CFG.apiKey && FB_CFG.projectId);
+  // Alter Supabase-Zugang, nur noch zum einmaligen Übernehmen der Termine nach Firestore
+  const LEGACY = CFG.legacySupabase && CFG.legacySupabase.url && CFG.legacySupabase.key ? CFG.legacySupabase : null;
+  const FB_SDK = 'https://www.gstatic.com/firebasejs/10.12.2/';
   const DEMO_ONLY = !!CFG.artifactDemo;
 
   /* ---------- Hilfsfunktionen ---------- */
@@ -137,25 +141,74 @@
     if (m) { ls.set('space', m[1]); history.replaceState(null, '', location.pathname + location.search); }
     space = ls.get('space', null);
   }
-  async function rpc(fn, body) {
-    const res = await fetch(CFG.supabaseUrl.replace(/\/$/, '') + '/rest/v1/rpc/' + fn, {
+  /* Alter Speicher (Supabase): nur noch lesen, für den Umzug */
+  async function legacyList() {
+    const res = await fetch(LEGACY.url.replace(/\/$/, '') + '/rest/v1/rpc/list_events', {
       method: 'POST',
-      headers: Object.assign({ 'Content-Type': 'application/json', apikey: CFG.supabaseAnonKey },
-        /^eyJ/.test(CFG.supabaseAnonKey) ? { Authorization: 'Bearer ' + CFG.supabaseAnonKey } : {}),
-      body: JSON.stringify(body)
+      headers: Object.assign({ 'Content-Type': 'application/json', apikey: LEGACY.key },
+        /^eyJ/.test(LEGACY.key) ? { Authorization: 'Bearer ' + LEGACY.key } : {}),
+      body: JSON.stringify({ p_space: space })
     });
     if (!res.ok) throw new Error((await res.text()) || res.statusText);
     const t = await res.text();
-    return t ? JSON.parse(t) : null;
+    return ((t ? JSON.parse(t) : null) || []).map(r => r.data).filter(Boolean);
   }
+
+  /* Firestore: kalender/{Kalender-Schlüssel}/events/{Termin-ID} */
+  let fsPromise = null;
+  const loadScript = src => new Promise((res, rej) => {
+    const s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = () => rej(new Error('Skript nicht geladen'));
+    document.head.appendChild(s);
+  });
+  function firestore() {
+    if (!fsPromise) {
+      fsPromise = (async () => {
+        await loadScript(FB_SDK + 'firebase-app-compat.js');
+        await loadScript(FB_SDK + 'firebase-firestore-compat.js');
+        const app = firebase.apps.find(a => a.name === 'kalender') || firebase.initializeApp(FB_CFG, 'kalender');
+        return app.firestore();
+      })();
+      fsPromise.catch(() => { fsPromise = null; });
+    }
+    return fsPromise;
+  }
+  const withTimeout = (p, ms) => Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error('Zeitüberschreitung')), ms))]);
+  const spaceRef = db => db.collection('kalender').doc(space);
+  const clean = o => JSON.parse(JSON.stringify(o)); // Firestore lehnt undefined ab
+  async function commitAll(db, ops) {
+    for (let i = 0; i < ops.length; i += 400) {
+      const b = db.batch();
+      ops.slice(i, i + 400).forEach(fn => fn(b));
+      await b.commit();
+    }
+  }
+  async function migrateOnce(db) {
+    if (!LEGACY) return;
+    const flag = spaceRef(db).collection('meta').doc('umzug');
+    if ((await flag.get()).exists) return;
+    const old = await legacyList();
+    const col = spaceRef(db).collection('events');
+    await commitAll(db, old.map(ev => b => b.set(col.doc(ev.id), clean(ev))));
+    await flag.set({ von: 'supabase', termine: old.length, am: new Date().toISOString() });
+  }
+
   const pending = () => ls.get('pending', { up: {}, del: [] });
   async function flush() {
     if (!REMOTE || !space) return;
     const p = pending();
     const ups = Object.values(p.up);
-    if (ups.length) await rpc('upsert_events', { p_space: space, p_events: ups });
-    for (const id of p.del) await rpc('delete_event', { p_space: space, p_id: id });
-    ls.set('pending', { up: {}, del: [] });
+    if (!ups.length && !p.del.length) return;
+    const db = await withTimeout(firestore(), 15000);
+    const col = spaceRef(db).collection('events');
+    await withTimeout(commitAll(db, [
+      ...ups.map(ev => b => b.set(col.doc(ev.id), clean(ev))),
+      ...p.del.map(id => b => b.delete(col.doc(id)))
+    ]), 15000);
+    // nur entfernen, was übertragen wurde; zwischenzeitliche Änderungen bleiben in der Warteschlange
+    const now = pending();
+    for (const ev of ups) if (now.up[ev.id] === undefined || JSON.stringify(now.up[ev.id]) === JSON.stringify(ev)) delete now.up[ev.id];
+    now.del = now.del.filter(id => !p.del.includes(id));
+    ls.set('pending', now);
   }
   async function load() {
     if (!REMOTE) {
@@ -167,12 +220,14 @@
     state.events = ls.get('cache.' + space, []);
     if (!space) return;
     try {
+      const db = await withTimeout(firestore(), 15000);
+      await withTimeout(migrateOnce(db), 20000);
       await flush();
-      const rows = await rpc('list_events', { p_space: space });
-      state.events = (rows || []).map(r => r.data);
+      const snap = await withTimeout(spaceRef(db).collection('events').get(), 15000);
+      state.events = snap.docs.map(d => d.data());
       ls.set('cache.' + space, state.events);
       state.offline = false;
-    } catch (e) { state.offline = true; }
+    } catch (e) { console.warn('Kalender offline:', e); state.offline = true; }
   }
   async function saveEvents(list) {
     const now = new Date().toISOString();
@@ -255,7 +310,7 @@
 
   function banner() {
     if (DEMO_ONLY) return '<div class="banner">' + ICON.info + '<span>Vorschau mit Beispielterminen. Änderungen bleiben nur in diesem Browser. Den gemeinsamen Kalender richtest du über das GitHub-Repo ein</span></div>';
-    if (!REMOTE) return '<div class="banner">' + ICON.info + '<span>Noch nicht mit Supabase verbunden. Termine bleiben nur in diesem Browser, bis config.js ausgefüllt ist</span></div>';
+    if (!REMOTE) return '<div class="banner">' + ICON.info + '<span>Noch nicht mit Firebase verbunden. Termine bleiben nur in diesem Browser, bis config.js ausgefüllt ist</span></div>';
     if (!space) return '<div class="banner">' + ICON.info + '<span>Dieses Gerät ist noch mit keinem Kalender verbunden. Unter Zugang einen Kalender anlegen oder den Einladungslink einfügen</span></div>';
     if (state.offline) return '<div class="banner">' + ICON.info + '<span>Keine Verbindung. Du siehst den letzten Stand, Änderungen werden später übertragen</span></div>';
     return '';
@@ -421,21 +476,14 @@
     const icon = (document.querySelector('link[rel="apple-touch-icon"]') || {}).href || CFG.iconData || '';
     let share = '';
     if (DEMO_ONLY) share = '<p class="note">In dieser Vorschau gibt es keinen Einladungslink. Nach der Einrichtung über GitHub erscheint hier der Link für ' + esc(NAMES.b) + '</p>';
-    else if (!REMOTE) share = '<p class="note">Trage in config.js die Supabase-Adresse und den öffentlichen Schlüssel ein. Dann erscheint hier der Einladungslink</p>';
+    else if (!REMOTE) share = '<p class="note">Trage in config.js die Firebase-Konfiguration ein. Dann erscheint hier der Einladungslink</p>';
     else if (!space) share = '<p class="note">Dieses Gerät ist noch mit keinem Kalender verbunden</p>' +
       '<button class="btn" data-act="newspace">Neuen gemeinsamen Kalender anlegen</button>' +
       '<label class="sr" for="join">Einladungslink</label><div class="copy-row"><input id="join" placeholder="Einladungslink einfügen"><button class="text-btn" data-act="join">Verbinden</button></div>';
     else share = '<p class="note">Wer diesen Link öffnet, kann alle Termine sehen und eintragen. Er ersetzt ein Konto, also nur an ' + esc(NAMES.b) + ' schicken</p>' +
       '<div class="copy-row"><label class="sr" for="inv">Einladungslink</label><input id="inv" readonly value="' + esc(accessUrl()) + '"><button class="text-btn" data-act="copy" data-src="inv">Kopieren</button></div>' +
       (navigator.share ? '<button class="btn-line" data-act="shareinv">Über Nachrichten oder WhatsApp senden</button>' : '');
-    let feed = '';
-    if (REMOTE && space && CFG.icsFeedUrl) {
-      const u = CFG.icsFeedUrl.replace(/\/$/, '') + '?k=' + space;
-      feed = '<div class="panel pad-in"><span class="h2" style="font-size:15px">Im eigenen Kalender abonnieren</span>' +
-        '<p class="note">Zeigt alle Termine in Apple Kalender, Google Kalender oder TimeTree an. Nur lesen, aktualisiert sich von selbst</p>' +
-        '<div class="copy-row"><label class="sr" for="feed">Abo-Link</label><input id="feed" readonly value="' + esc(u) + '"><button class="text-btn" data-act="copy" data-src="feed">Kopieren</button></div>' +
-        (ios ? '<a class="btn-line" style="display:flex;align-items:center;justify-content:center;text-decoration:none;color:var(--text)" href="' + esc(u.replace(/^https:/, 'webcal:')) + '">In Apple Kalender abonnieren</a>' : '<p class="note">Google Kalender: am Rechner calendar.google.com › Weitere Kalender › Per URL, Link einfügen</p>') + '</div>';
-    }
+    const feed = '';
     const install = standalone ? '<p class="note">Läuft bereits als App vom Home-Bildschirm</p>' :
       (ios ? '<ol class="steps"><li>Diese Seite in Safari öffnen</li><li>Unten auf das Teilen-Symbol tippen</li><li>Zum Home-Bildschirm wählen, dann Hinzufügen</li></ol>' :
         '<ol class="steps"><li>Diese Seite in Chrome öffnen</li><li>Oben rechts das Menü öffnen</li><li>Zum Startbildschirm hinzufügen oder App installieren wählen</li></ol>');
@@ -890,10 +938,12 @@
   /* ---------- Start ---------- */
   initSpace();
   (async () => {
-    await load();
     if (!state.me && !DEMO_ONLY) state.sheet = { type: 'who' };
     if (DEMO_ONLY && !state.me) state.me = 'a';
+    const first = load(); // zeigt sofort den zwischengespeicherten Stand
     render();
+    await first;
+    if (state.sheet && state.sheet.type !== 'who') renderSheet(); else render();
     if (REMOTE) {
       setInterval(async () => { if (document.visibilityState === 'visible' && !state.sheet && space) { await load(); render(); } }, 30000);
       document.addEventListener('visibilitychange', async () => { if (document.visibilityState === 'visible' && space && !state.sheet) { await load(); render(); } });
