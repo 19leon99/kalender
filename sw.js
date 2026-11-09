@@ -1,6 +1,6 @@
 // Hält die App-Dateien offline bereit. Termine kommen weiter live aus Firestore.
-const CACHE = 'kalender-v3';
-const FILES = ['./', 'index.html', 'styles.css', 'app.js', 'config.js', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/apple-touch-icon.png'];
+const CACHE = 'kalender-v4';
+const FILES = ['./', 'index.html', 'styles.css?v=4', 'app.js?v=4', 'config.js?v=4', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/apple-touch-icon.png'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES)).then(() => self.skipWaiting()));
@@ -13,7 +13,7 @@ self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET' || url.origin !== location.origin) return;
   // Netz zuerst, damit Änderungen am Repo sofort ankommen; offline aus dem Speicher
   e.respondWith(
-    fetch(e.request).then(res => {
+    fetch(e.request.url, { cache: 'no-cache', credentials: 'same-origin' }).then(res => {
       const copy = res.clone();
       caches.open(CACHE).then(c => c.put(e.request, copy));
       return res;
