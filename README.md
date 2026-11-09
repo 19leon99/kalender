@@ -46,7 +46,7 @@ Wichtig fürs iPhone: Die App auf dem Home-Bildschirm hat einen eigenen Speicher
 
 ### Umzug von Supabase
 
-Beim ersten Öffnen nach dem Umzug kopiert jedes Gerät die Termine seines Kalenders einmalig aus Supabase nach Firestore (`config.js` › `legacySupabase`). Danach steht unter `kalender/<Schlüssel>/meta/umzug` ein Vermerk, und Supabase wird nicht mehr gelesen. Wenn beide Geräte den Kalender einmal geöffnet haben, kann `legacySupabase` aus `config.js` gelöscht und das Supabase-Projekt entfernt werden.
+Am 9. November 2026 sind die Termine von Supabase nach Firestore umgezogen. Der Supabase-Zugang ist aus `config.js` entfernt.
 
 ## Alte Termine übernehmen
 

@@ -1,6 +1,6 @@
 // Hält die App-Dateien offline bereit. Termine kommen weiter live aus Firestore.
-const CACHE = 'kalender-v4';
-const FILES = ['./', 'index.html', 'styles.css?v=4', 'app.js?v=4', 'config.js?v=4', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/apple-touch-icon.png'];
+const CACHE = 'kalender-v5';
+const FILES = ['./', 'index.html', 'styles.css?v=5', 'app.js?v=5', 'config.js?v=5', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/apple-touch-icon.png'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES)).then(() => self.skipWaiting()));

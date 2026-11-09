@@ -15,12 +15,5 @@ window.KALENDER_CONFIG = {
     authDomain: 'to-do-3cbe0.firebaseapp.com',
     projectId: 'to-do-3cbe0',
     appId: '1:520898755136:web:9e7965d8971346e0bd3da5'
-  },
-
-  // Alter Speicher. Wird nur noch gelesen, um die Termine einmalig nach Firestore zu übernehmen.
-  // Kann gelöscht werden, sobald alle Geräte den Kalender einmal geöffnet haben.
-  legacySupabase: {
-    url: 'https://xhuujdtibfxdcegncrbn.supabase.co',
-    key: 'sb_publishable_5uguXhpUMuqIz6_cYWJ_cg_ZbXs4ONA'
   }
 };
